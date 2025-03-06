@@ -1,4 +1,4 @@
-FROM pklehre/ec2024-lab2
+FROM pklehre/ec2025-lab2
 
 # Copy your script into the container
 COPY ixa287.py /bin/ixa287.py
@@ -7,4 +7,4 @@ COPY ixa287.py /bin/ixa287.py
 # RUN apt-get update && apt-get install -y python3-pip
 
 # Run the script correctly
-CMD ["-username", "ixa287", "-submission", "python /bin/ixa287.py"]
+CMD ["-username", "ixa287", "-submission", "python3 /bin/ixa287.py"]

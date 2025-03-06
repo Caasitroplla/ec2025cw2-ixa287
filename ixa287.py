@@ -40,16 +40,16 @@ def check_satisfiability(assignment: str, clause: str) -> int:
 
 def count_satisfied_clauses(wdimacs_file: str, assignment: str) -> int:
     """
-    Count the number of satisfied clauses in a WDIMACS file for a given assignment.
+    Count the weighted sum of satisfied clauses in a WDIMACS file for a given assignment.
 
     Args:
         wdimacs_file: Path to the WDIMACS format file
         assignment: Assignment as a bitstring
 
     Returns:
-        Number of satisfied clauses
+        Weighted sum of satisfied clauses
     """
-    satisfied_count = 0
+    satisfied_sum = 0
 
     with open(wdimacs_file, 'r') as f:
         for line in f:
@@ -63,13 +63,27 @@ def count_satisfied_clauses(wdimacs_file: str, assignment: str) -> int:
             if line.startswith('p'):
                 continue
 
-            # Process clause lines
-            if line and not line.startswith('c') and not line.startswith('p'):
-                # Check if the clause is satisfied
-                if check_satisfiability(assignment, line):
-                    satisfied_count += 1
+            # Skip weight lines (start with 'w')
+            if line.startswith('w'):
+                continue
 
-    return satisfied_count
+            # Process clause lines
+            if line:
+                tokens = line.split()
+
+                # Get weight and clause
+                weight = 1  # Default weight if not specified
+                if tokens and tokens[0].isdigit():
+                    weight = int(tokens[0])
+                    clause = "0 " + " ".join(tokens[1:])
+                else:
+                    clause = line
+
+                # Add weight to sum if clause is satisfied
+                if check_satisfiability(assignment, clause):
+                    satisfied_sum += weight
+
+    return satisfied_sum
 
 def evolutionary_algorithm(wdimacs_file: str, time_budget: float, population_size: int = 100) -> Tuple[int, int, str]:
     """

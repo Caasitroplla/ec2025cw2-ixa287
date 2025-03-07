@@ -88,7 +88,9 @@ def count_satisfied_clauses(wdimacs_file: str, assignment: str) -> int:
         clause_str = '0 ' + ' '.join(map(str, clauses[i])) + ' 0'
         is_satisfied = check_satisfiability(assignment, clause_str)
         if is_satisfied:
-            satisfied_sum += 1
+            satisfied_sum += weights[i]
+        else:
+            satisfied_sum -= weights[i]
 
     return satisfied_sum
 

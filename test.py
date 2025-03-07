@@ -1,6 +1,6 @@
 from ixa287 import *
 
-file = "example.wcnf"
+file = "tmp016a64niso2.wcnf"
 
 assignments = ["0000", "0001"]
 

@@ -94,7 +94,7 @@ def count_satisfied_clauses(wdimacs_file: str, assignment: str) -> int:
 
     return satisfied_sum
 
-def evolutionary_algorithm(wdimacs_file: str, time_budget: float, population_size: int = 100) -> Tuple[int, int, str]:
+def evolutionary_algorithm(wdimacs_file: str, time_budget: float, population_size: int = 100, mutation_rate: float = 0.2) -> Tuple[int, int, str]:
     """
     Run the evolutionary algorithm for MAXSAT.
 
@@ -111,22 +111,28 @@ def evolutionary_algorithm(wdimacs_file: str, time_budget: float, population_siz
         raise ValueError("No problem line found in WDIMACS file")
 
     def create_random_individual(num_variables: int) -> str:
-        """Create a random individual as a bitstring."""
-        return ''.join(random.choice('01') for _ in range(num_variables))
+        """Create a random individual as a bitstring with biased initialization."""
+        # Use 70% 1s and 30% 0s for initial population
+        return ''.join('1' if random.random() < 0.7 else '0' for _ in range(num_variables))
 
     def tournament_selection(population: List[str], fitness_values: List[int], tournament_size: int = 3) -> str:
-        """Select an individual using tournament selection."""
+        """Select an individual using tournament selection with increased pressure."""
         tournament_idx = random.sample(range(len(population)), tournament_size)
         tournament_fitness = [fitness_values[i] for i in tournament_idx]
-        winner_idx = tournament_idx[tournament_fitness.index(max(tournament_fitness))]
+        # Use exponential ranking for selection
+        ranks = sorted(range(len(tournament_fitness)), key=lambda k: tournament_fitness[k], reverse=True)
+        weights = [0.5 ** (i + 1) for i in range(len(ranks))]
+        weights = [w / sum(weights) for w in weights]
+        winner_idx = tournament_idx[ranks[random.choices(range(len(ranks)), weights=weights)[0]]]
         return population[winner_idx]
 
     def crossover(parent1: str, parent2: str) -> str:
-        """Perform uniform crossover between two parents."""
-        return ''.join(random.choice(p1 + p2) for p1, p2 in zip(parent1, parent2))
+        """Perform uniform crossover between two parents with bias."""
+        # Use 60% chance of taking bit from better parent
+        return ''.join(p1 if random.random() < 0.6 else p2 for p1, p2 in zip(parent1, parent2))
 
-    def mutation(individual: str, mutation_rate: float = 0.1) -> str:
-        """Perform bit-flip mutation on an individual."""
+    def mutation(individual: str, mutation_rate: float) -> str:
+        """Perform bit-flip mutation on an individual with increased rate."""
         return ''.join('1' if bit == '0' and random.random() < mutation_rate else
                     '0' if bit == '1' and random.random() < mutation_rate else
                     bit for bit in individual)
@@ -134,8 +140,14 @@ def evolutionary_algorithm(wdimacs_file: str, time_budget: float, population_siz
     num_variables = get_num_variables(wdimacs_file)
     start_time = time.time()
 
-    # Initialize population
-    population = [create_random_individual(num_variables) for _ in range(population_size)]
+    # Initialize population with more diversity
+    population = []
+    for _ in range(population_size):
+        if random.random() < 0.3:  # 30% chance of completely random individual
+            population.append(''.join(random.choice('01') for _ in range(num_variables)))
+        else:
+            population.append(create_random_individual(num_variables))
+
     fitness_values = [count_satisfied_clauses(wdimacs_file, ind) for ind in population]
     best_solution = population[fitness_values.index(max(fitness_values))]
     best_fitness = max(fitness_values)
@@ -153,7 +165,7 @@ def evolutionary_algorithm(wdimacs_file: str, time_budget: float, population_siz
             child = crossover(parent1, parent2)
 
             # Mutation
-            child = mutation(child)
+            child = mutation(child, mutation_rate)
 
             new_population.append(child)
 

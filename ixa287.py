@@ -40,48 +40,55 @@ def check_satisfiability(assignment: str, clause: str) -> int:
 
 def count_satisfied_clauses(wdimacs_file: str, assignment: str) -> int:
     """
-    Count the weighted sum of satisfied clauses in a WDIMACS file for a given assignment.
+    Count the number of satisfied clauses in a WDIMACS file for a given assignment,
+    negatively weighting unsatisfied clauses.
 
     Args:
         wdimacs_file: Path to the WDIMACS format file
         assignment: Assignment as a bitstring
 
     Returns:
-        Weighted sum of satisfied clauses
+        Weighted sum of satisfied clauses, with unsatisfied clauses negatively weighted
     """
     satisfied_sum = 0
+    clauses = []
+    weights = []
 
     with open(wdimacs_file, 'r') as f:
         for line in f:
             line = line.strip()
-
-            # Skip empty lines and comments
             if not line or line.startswith('c'):
                 continue
 
-            # Skip the problem line (starts with 'p')
-            if line.startswith('p'):
-                continue
+            elif line.startswith('p'):  # Problem line
+                parts = line.split()
+                if parts[1] not in ('cnf', 'wcnf'):
+                    raise ValueError("Invalid WDIMACS file format")
+                num_variables = int(parts[2])
+                num_clauses = int(parts[3])
 
-            # Skip weight lines (start with 'w')
-            if line.startswith('w'):
-                continue
+            else:  # Clause line
+                parts = list(map(int, line.split()))
+                if len(parts) < 2 or parts[-1] != 0:
+                    raise ValueError("Invalid WDIMACS file format, must terminate with 0")
 
-            # Process clause lines
-            if line:
-                tokens = line.split()
-
-                # Get weight and clause
-                weight = 1  # Default weight if not specified
-                if tokens and tokens[0].isdigit():
-                    weight = int(tokens[0])
-                    clause = "0 " + " ".join(tokens[1:])
+                # Default weight is 1 if not specified
+                weight = 1
+                if parts[0] != 0:  # If the first part is not zero, treat it as a weight
+                    weight = parts[0]
+                    clause = parts[1:-1]
                 else:
-                    clause = line
+                    clause = parts[:-1]
 
-                # Add weight to sum if clause is satisfied
-                if check_satisfiability(assignment, clause):
-                    satisfied_sum += weight
+                clauses.append(clause)
+                weights.append(weight)
+
+    # Evaluate all clauses against the assignment
+    for i in range(len(clauses)):
+        clause_str = '0 ' + ' '.join(map(str, clauses[i])) + ' 0'
+        is_satisfied = check_satisfiability(assignment, clause_str)
+        if is_satisfied:
+            satisfied_sum += 1
 
     return satisfied_sum
 
@@ -181,11 +188,13 @@ if __name__ == "__main__":
             raise ValueError("Clause and assignment arguments are required for question 1")
         result = check_satisfiability(args.assignment, args.clause)
         print(result)  # Just print the result (1 or 0) as required
+
     elif args.question == "2":
         if not args.wdimacs or not args.assignment:
             raise ValueError("WDIMACS file and assignment arguments are required for question 2")
         result = count_satisfied_clauses(args.wdimacs, args.assignment)
         print(result)  # Print the number of satisfied clauses
+
     elif args.question == "3":
         if not args.wdimacs or not args.time_budget or not args.repetitions:
             raise ValueError("WDIMACS file, time budget, and repetitions arguments are required for question 3")
@@ -193,5 +202,6 @@ if __name__ == "__main__":
         for _ in range(args.repetitions):
             runtime, nsat, xbest = evolutionary_algorithm(args.wdimacs, args.time_budget)
             print(f"{runtime}\t{nsat}\t{xbest}")
+
     else:
         raise ValueError(f"Invalid question number: {args.question}")

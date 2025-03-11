@@ -83,14 +83,11 @@ def count_satisfied_clauses(wdimacs_file: str, assignment: str) -> int:
                 clauses.append(clause)
                 weights.append(weight)
 
-    # Evaluate all clauses against the assignment
+    # Evaluate each clauses against the assignment
     for i in range(len(clauses)):
         clause_str = '0 ' + ' '.join(map(str, clauses[i])) + ' 0'
         is_satisfied = check_satisfiability(assignment, clause_str)
-        if is_satisfied:
-            satisfied_sum += weights[i]
-        else:
-            satisfied_sum -= weights[i]
+        satisfied_sum += 1 if is_satisfied else 0
 
     return satisfied_sum
 
@@ -128,8 +125,8 @@ def evolutionary_algorithm(wdimacs_file: str, time_budget: float, population_siz
 
     def crossover(parent1: str, parent2: str) -> str:
         """Perform uniform crossover between two parents with bias."""
-        # Use 60% chance of taking bit from better parent
-        return ''.join(p1 if random.random() < 0.6 else p2 for p1, p2 in zip(parent1, parent2))
+        # Use 50% chance of taking bit from either parent
+        return ''.join(p1 if random.random() < 0.5 else p2 for p1, p2 in zip(parent1, parent2))
 
     def mutation(individual: str, mutation_rate: float) -> str:
         """Perform bit-flip mutation on an individual with increased rate."""

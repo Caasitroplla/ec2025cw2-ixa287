@@ -1,0 +1,66 @@
+# Evolutionary Algorithm Psuedocode
+
+Function get_num_variables(wdimacs_file):
+  Open the WDIMACS file:
+    For each line in the file:
+      If line starts with 'p'
+        Return the number of variables from the line
+
+
+Function create_random_inidividual(num_variables);
+  bitstring = ''
+  For num_variables
+    bitstring += randombit
+  Return bitstring
+
+
+Function tournament_selection(population, fitness_values, tournament_size)
+  Randomly select tournament_size individuals from the population
+  Rank them based on their fitness fitness_values
+  Use exponential ranking to select a winner
+  Return the winner
+
+
+Function crossover(parent1, parent2)
+  For each bit in parent1 and parent2
+    With 50% probability, take the bit from parent1
+    Otherwise, take the but from the other parent
+  Return the new bitstrings
+
+
+Function mutation(individual, mutation_rate):
+  For each bit in the individual
+    With mutation_rate probability, flip the bit
+  Return the mutated individual
+
+
+Function evolutionary_algorithm(wdimacs_file, time_budget, population_size, mutation_rate)
+  start_time = current time
+  num_variables = get_num_variables(wdimacs_file)
+
+  Initalise population with population_size individuals
+  Calculate fitness_values for the population
+  Set best_solution to the individual with the highest fitness
+  Set best_fitness to the highest fitness value
+  Set generations to 0
+
+  While current time - start time < time_budget
+    Initalise new_population as empty
+    While new_population size < population_size
+      Select parent1 using tournament_selection
+      Select parent2 using tournament_selection
+      Create child using crossover(parent1, parent2)
+      Mutate child using mutation(child, mutation_rate)
+      Add child to new_population
+
+    Calculate new_fitness for new_population
+    If the best fitness in new_fitness is greater than best_fitness
+      Update best_fitness and best_solution
+
+    population = new_population
+    fitness_values = new_fitness
+    generations += 1
+
+  runtime = generations * population_size
+  Return (runtime, best_fitness, best_solution)
+
